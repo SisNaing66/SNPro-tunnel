@@ -102,8 +102,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnTestPing: TextView
     private lateinit var tvCfPing: TextView
     private lateinit var tvFbPing: TextView
-    private lateinit var tvCfDot: TextView
-    private lateinit var tvFbDot: TextView
+    private lateinit var imgCfDot: ImageView
+    private lateinit var imgFbDot: ImageView
 
     private var isConnected = false
     private var pingJob: Job? = null
@@ -204,8 +204,8 @@ class MainActivity : AppCompatActivity() {
         btnTestPing = findViewById(R.id.btnTestPing)
         tvCfPing = findViewById(R.id.tvCfPing)
         tvFbPing = findViewById(R.id.tvFbPing)
-        tvCfDot = findViewById(R.id.tvCfDot)
-        tvFbDot = findViewById(R.id.tvFbDot)
+        imgCfDot = findViewById(R.id.imgCfDot)
+        imgFbDot = findViewById(R.id.imgFbDot)
         
         switchDarkMode.isChecked = isDark
         switchLogs.isChecked = prefs.getBoolean("SHOW_LOGS", true)
@@ -981,11 +981,13 @@ class MainActivity : AppCompatActivity() {
         try {
             if (!isConnected) return@withContext
 
+            // Cloudflare Ping
             val cfStartTime = System.currentTimeMillis()
             val cfAddress = InetAddress.getByName("1.1.1.1")
             val cfReachable = cfAddress.isReachable(2500)
             val cfPingTime = System.currentTimeMillis() - cfStartTime
 
+            // Facebook Ping
             val fbStartTime = System.currentTimeMillis()
             val fbAddress = InetAddress.getByName("facebook.com")
             val fbReachable = fbAddress.isReachable(2500)
@@ -996,7 +998,7 @@ class MainActivity : AppCompatActivity() {
 
             val logMessage = "🏓 Ping -> CF: $cfResult | FB: $fbResult"
             val notiMessage = "CF: $cfResult | FB: $fbResult"
-            
+
             appendLog(logMessage)
 
             withContext(Dispatchers.Main) {
@@ -1004,27 +1006,39 @@ class MainActivity : AppCompatActivity() {
                     tvCfPing.text = cfResult
                     tvFbPing.text = fbResult
 
-                    tvCfDot.text = if (cfReachable) "🟢 " else "⚪ "
-                    tvFbDot.text = if (fbReachable) "🟢 " else "⚪ "
+                    // Cloudflare Dot
+                    if (cfReachable) {
+                        imgCfDot.setColorFilter(Color.parseColor("#00FF00"))
+                        animateDot(imgCfDot, true)
+                    } else {
+                        imgCfDot.setColorFilter(Color.parseColor("#64748B"))
+                        animateDot(imgCfDot, false)
+                    }
 
-                    animateDot(tvCfDot, cfReachable)
-                    animateDot(tvFbDot, fbReachable)
+                    // Facebook Dot
+                    if (fbReachable) {
+                        imgFbDot.setColorFilter(Color.parseColor("#00FF00"))
+                        animateDot(imgFbDot, true)
+                    } else {
+                        imgFbDot.setColorFilter(Color.parseColor("#64748B"))
+                        animateDot(imgFbDot, false)
+                    }
 
                     notificationHelper.updateNotification(notiMessage)
                 }
             }
-        
+
         } catch (e: Exception) {
             if (isActive) {
                 appendLog("Ping Error: ${e.localizedMessage}")
                 withContext(Dispatchers.Main) {
                     tvCfPing.text = "N/A"
                     tvFbPing.text = "N/A"
-                    tvCfDot.text = "⚪ "
-                    tvFbDot.text = "⚪ "
                     
-                    animateDot(tvCfDot, false)
-                    animateDot(tvFbDot, false)
+                    imgCfDot.setColorFilter(Color.parseColor("#64748B"))
+                    imgFbDot.setColorFilter(Color.parseColor("#64748B"))
+                    animateDot(imgCfDot, false)
+                    animateDot(imgFbDot, false)
 
                     notificationHelper.updateNotification("Ping Error")
                 }
@@ -1045,8 +1059,8 @@ class MainActivity : AppCompatActivity() {
 
             tvCfPing.text = "N/A"
             tvFbPing.text = "N/A"
-            tvCfDot.text = "⚪ "
-            tvFbDot.text = "⚪ "
+            imgCfDot.setColorFilter(Color.parseColor("#64748B"))
+            imgFbDot.setColorFilter(Color.parseColor("#64748B"))
 
             animateDot(tvCfDot, false)
             animateDot(tvFbDot, false)
