@@ -1062,8 +1062,8 @@ class MainActivity : AppCompatActivity() {
             imgCfDot.setColorFilter(Color.parseColor("#64748B"))
             imgFbDot.setColorFilter(Color.parseColor("#64748B"))
 
-            animateDot(tvCfDot, false)
-            animateDot(tvFbDot, false)
+            animateDot(imgCfDot, false)
+            animateDot(imgFbDot, false)
 
             notificationHelper.cancelNotification()
         }
