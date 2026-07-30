@@ -246,7 +246,10 @@
                         android:text="Test"
                         android:textColor="#38BDF8"
                         android:textSize="13sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:drawableStart="@drawable/ic_refresh"
+                        android:drawablePadding="4dp"
+                        app:drawableTint="#38BDF8" />
                 </RelativeLayout>
 
                 <LinearLayout
