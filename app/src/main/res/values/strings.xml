@@ -1,6 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  
-  <string name="app_name">Warp Tunnel</string>
+    <!-- App Name -->
+    <string name="app_name">Warp Tunnel</string>
 
+    <!-- Main Screen Strings -->
+    <string name="tap_to_connect">TAP TO CONNECT</string>
+    <string name="connecting">CONNECTING...</string>
+    <string name="connected">CONNECTED</string>
+    <string name="active_since">Active Since</string>
+    <string name="connection_latency">Connection Latency</string>
+    <string name="test">Test</string>
+    <string name="not_connected">Not Connected</string>
+
+    <!-- Drawer / Menu Options -->
+    <string name="dark_mode">Dark Mode</string>
+    <string name="connection_logs">Connection Logs</string>
+    <string name="auto_ping">Auto Ping</string>
+    <string name="split_tunneling">Split Tunneling</string>
+    <string name="dns_settings">DNS Settings</string>
+    <string name="restore_defaults">Restore Defaults</string>
+    <string name="device_hwid">Device Hardware ID</string>
+
+    <!-- Dialogs -->
+    <string name="exit_title">Exit WARP TUNNEL?</string>
+    <string name="exit_message">Choose whether to minimize to background or exit the app completely.</string>
+    <string name="restore_title">Restore Defaults</string>
+    <string name="restore_message">Are you sure you want to reset all settings, configs, and preferences to default?</string>
+    <string name="cancel">CANCEL</string>
+    <string name="minimize">MINIMIZE</string>
+    <string name="exit">EXIT</string>
+    <string name="ok">OK</string>
+    <string name="copy">Copy</string>
+    <string name="share">Share</string>
 </resources>
