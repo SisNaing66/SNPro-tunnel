@@ -113,6 +113,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var imgCfDot: ImageView
     private lateinit var imgFbDot: ImageView
 
+    private lateinit var btnMainMenu: ImageView
+    private lateinit var btnHelp: ImageView
+
     private var isConnected = false
     private var pingJob: Job? = null
     private var timerJob: Job? = null
@@ -182,6 +185,8 @@ class MainActivity : AppCompatActivity() {
         // Initialize views
         drawerLayout = findViewById(R.id.drawerLayout)
         btnMenu = findViewById(R.id.btnMenu)
+        btnMainMenu = findViewById(R.id.btnMainMenu)
+        btnHelp = findViewById(R.id.btnHelp)
         btnConnectCard = findViewById(R.id.btnConnectCard)
         cardServer = findViewById(R.id.cardServer)
         tvServerName = findViewById(R.id.tvServerName)
@@ -361,6 +366,21 @@ class MainActivity : AppCompatActivity() {
     private fun setupListeners() {
         btnMenu.setOnClickListener {
             drawerLayout.openDrawer(GravityCompat.START)
+        }
+
+        btnMainMenu.setOnClickListener { view ->
+            val popup = androidx.appcompat.widget.PopupMenu(this, view)
+            popup.menuInflater.inflate(R.menu.main_menu, popup.menu)
+            popup.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    R.id.action_help -> {
+                        showHelpDialog()
+                        true
+                    }
+                    else -> false
+                }
+            }
+            popup.show()
         }
 
         btnConnectCard.setOnClickListener {
