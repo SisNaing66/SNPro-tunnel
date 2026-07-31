@@ -43,7 +43,7 @@
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <!-- Menu -->
+            <!-- Main Menu -->
             <ImageView
                 android:id="@+id/btnMainMenu"
                 android:layout_width="32dp"
@@ -54,7 +54,7 @@
                 android:clickable="true"
                 android:focusable="true"
                 android:padding="2dp"
-                android:src="@drawable/ic_menu_help"
+                android:src="@drawable/ic_main_menu"
                 app:tint="?attr/colorOnBackground" />
         </RelativeLayout>
 
