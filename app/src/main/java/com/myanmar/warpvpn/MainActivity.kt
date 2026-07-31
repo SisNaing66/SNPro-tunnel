@@ -114,7 +114,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var imgFbDot: ImageView
 
     private lateinit var btnMainMenu: ImageView
-    private lateinit var btnHelp: ImageView
 
     private var isConnected = false
     private var pingJob: Job? = null
@@ -186,7 +185,6 @@ class MainActivity : AppCompatActivity() {
         drawerLayout = findViewById(R.id.drawerLayout)
         btnMenu = findViewById(R.id.btnMenu)
         btnMainMenu = findViewById(R.id.btnMainMenu)
-        btnHelp = findViewById(R.id.btnHelp)
         btnConnectCard = findViewById(R.id.btnConnectCard)
         cardServer = findViewById(R.id.cardServer)
         tvServerName = findViewById(R.id.tvServerName)
