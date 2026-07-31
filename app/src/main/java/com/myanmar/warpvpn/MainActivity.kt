@@ -118,7 +118,17 @@ class MainActivity : AppCompatActivity() {
     private var pendingConfigStr: String? = null
 
     private val backend by lazy { GoBackend(applicationContext) }
-    private val tunnel = WgTunnel()
+    private val tunnel = WgTunnel { newState ->
+        if (newState == com.wireguard.android.backend.Tunnel.State.DOWN) {
+            runOnUiThread {
+                if (isConnected) {
+                    appendLog("⚠️ VPN Session Revoked by System (Another VPN connected).")
+                  //  Toast.makeText(this, "Disconnected: Another VPN was activated", Toast.LENGTH_LONG).show()
+                    resetUi()
+                }
+            }
+        }
+    }
     private val notificationHelper by lazy { NotificationHelper(this) }
 
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -247,6 +257,22 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("WARP_VPN_PREFS", Context.MODE_PRIVATE)
         if (::switchSplitTunnel.isInitialized) {
             switchSplitTunnel.isChecked = prefs.getBoolean("SPLIT_TUNNEL_ENABLED", false)
+        }
+
+        checkVpnStateAndResetIfNeeded()
+    }
+
+    private fun checkVpnStateAndResetIfNeeded() {
+        if (isConnected) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                val currentState = backend.getState(tunnel)
+                if (currentState == com.wireguard.android.backend.Tunnel.State.DOWN) {
+                    withContext(Dispatchers.Main) {
+                        appendLog("⚠️ VPN disconnected in background.")
+                        resetUi()
+                    }
+                }
+            }
         }
     }
 
@@ -1191,8 +1217,11 @@ class MainActivity : AppCompatActivity() {
 
     // ==================== WgTunnel ====================
 
-    class WgTunnel : com.wireguard.android.backend.Tunnel {
+    class WgTunnel(private val onStateChangedListener: ((com.wireguard.android.backend.Tunnel.State) -> Unit)? = null) : com.wireguard.android.backend.Tunnel {
         override fun getName(): String = "WARPTunnel"
-        override fun onStateChange(newState: com.wireguard.android.backend.Tunnel.State) {}
+        
+        override fun onStateChange(newState: com.wireguard.android.backend.Tunnel.State) {
+            onStateChangedListener?.invoke(newState)
+        }
     }
 }
