@@ -20,6 +20,8 @@ import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
+import android.view.Menu
+import android.view.MenuItem
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -260,6 +262,51 @@ class MainActivity : AppCompatActivity() {
         }
 
         checkVpnStateAndResetIfNeeded()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_help -> {
+                showHelpDialog()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun showHelpDialog() {
+        val helpMessage = """
+            Welcome to WARP Tunnel!
+            
+            🔹 Tap To Connect: Click the main power button to establish a secure Warp connection.
+            
+            🔹 Engine Options:
+            • Cloudflare Direct API: Connects directly through Cloudflare infrastructure.
+            • Custom Backup API: Backup option if direct API is blocked.
+            
+            🔹 Auto Clean IP:
+            The app automatically scans 500+ Cloudflare IP endpoints in real-time to assign you the lowest latency & best performing IP for your ISP.
+            
+            🔹 Split Tunneling:
+            Exclude specific apps from using the VPN connection under the menu settings.
+            
+            🔹 Ping Monitor:
+            Live ping updates for Cloudflare and Facebook servers to verify actual connectivity.
+        """.trimIndent()
+
+        AlertDialog.Builder(this, R.style.DarkCustomDialog)
+            .setTitle("❓ WARP Tunnel Help")
+            .setMessage(helpMessage)
+            .setPositiveButton("OK") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .create()
+            .show()
     }
 
     private fun checkVpnStateAndResetIfNeeded() {
