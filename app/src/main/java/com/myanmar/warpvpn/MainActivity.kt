@@ -827,10 +827,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun connectVpnWithPendingConfig() {
-        val configStr = pendingConfigStr ?: return
-
         lifecycleScope.launch(Dispatchers.IO) {
             try {
+                val configStr = pendingConfigStr ?: wgcfManager.registerAndGetConfig(engineMode = "CF_DIRECT")
+
                 appendLog("Building Tunnel Session...")
                 val parsedConfig = Config.parse(ByteArrayInputStream(configStr.toByteArray()))
 
