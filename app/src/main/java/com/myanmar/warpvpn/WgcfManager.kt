@@ -10,7 +10,6 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.net.InetAddress
-import java.net.URLEncoder
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
@@ -22,15 +21,17 @@ class WgcfManager {
         .writeTimeout(15, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
         .build()
-
-    // Cloudflare API Base URLs
-    private val cfApiBases = listOf(
-        "https://api.cloudflareclient.com/v0i1909051800",
-        "https://api.cloudflareclient.com/v0a2109151800",
-        "https://api.cloudflareclient.com/v0a2409051800"
-    )
-
-    // WARP Endpoints
+        
+    private val cfApiBases: List<String>
+        get() = listOf(
+            NativeUtils.getCfApiBase1(),
+            NativeUtils.getCfApiBase2(),
+            NativeUtils.getCfApiBase3()
+        )
+        
+    private val customApiUrl: String
+        get() = NativeUtils.getCustomApiUrl()
+        
     private val warpEndpoints = listOf(
         "162.159.192.3",
         "162.159.192.4",
@@ -38,7 +39,6 @@ class WgcfManager {
         "162.159.192.6",
         "162.159.192.7",
         "162.159.192.8",
-        "162.159.192.4",
         "162.159.195.1",
         "162.159.195.2",
         "162.159.195.3",
@@ -59,10 +59,7 @@ class WgcfManager {
         "162.159.192.158",
         "162.159.192.159"
     )
-
-    private val customApiUrl = "https://nyeinkokoaung.alwaysdata.net/wg/api.php"
-
-    // Main function to register and get WARP config
+    
     suspend fun registerAndGetConfig(
         engineMode: String = "CF_DIRECT",
         maxRetries: Int = 3
@@ -86,8 +83,7 @@ class WgcfManager {
         
         throw lastException ?: Exception("All retry attempts failed")
     }
-
-    // Fetch config from Cloudflare API with multiple endpoint fallback
+    
     private fun fetchFromCloudflareApiWithFallback(): String {
         var lastException: Exception? = null
 
@@ -103,8 +99,7 @@ class WgcfManager {
 
         throw lastException ?: Exception("All Cloudflare API endpoints failed")
     }
-
-    // Fetch config from specific Cloudflare API and endpoint
+    
     private fun fetchFromCloudflareApi(apiBase: String, endpoint: String): String {
         val keyPair = KeyPair()
         val privateKey = keyPair.privateKey.toBase64()
@@ -152,8 +147,7 @@ class WgcfManager {
         val addresses = interfaceObj.getJSONObject("addresses")
         val ipv4 = addresses.getString("v4")
         val ipv6 = addresses.getString("v6")
-
-        // Return as RAW WireGuard Config
+        
         return buildRawWireGuardConfig(
             privateKey = privateKey,
             endpoint = endpoint,
@@ -163,8 +157,7 @@ class WgcfManager {
             dns = "1.1.1.1, 1.0.0.1"
         )
     }
-
-    // Fetch config from custom backup API
+    
     private fun fetchFromCustomApi(): String {
         val userId = (100000..999999).random().toString()
         val requestUrl = "$customApiUrl?user_id=$userId"
@@ -195,11 +188,8 @@ class WgcfManager {
         val clientPrivateKey = configObj.getString("private_key").trim()
         val rawAddress = configObj.getString("address").trim()
         val serverPublicKey = configObj.getString("public_key").trim()
-
-        // Find working endpoint
         val endpoint = findWorkingEndpoint()
-
-        // Return as RAW WireGuard Config
+        
         return buildRawWireGuardConfig(
             privateKey = clientPrivateKey,
             endpoint = endpoint,
@@ -209,8 +199,7 @@ class WgcfManager {
             dns = "1.1.1.1, 1.0.0.1"
         )
     }
-
-    // Build RAW WireGuard Config
+    
     private fun buildRawWireGuardConfig(
         privateKey: String,
         endpoint: String,
@@ -219,7 +208,6 @@ class WgcfManager {
         publicKey: String,
         dns: String
     ): String {
-        // Format address properly
         val formattedAddress = if (address.contains(",") && !address.contains(", ")) {
             address.replace(",", ", ")
         } else {
@@ -239,8 +227,7 @@ class WgcfManager {
             AllowedIPs = 0.0.0.0/0, ::/0
         """.trimIndent()
     }
-
-    // Find working endpoint by testing connectivity
+    
     private fun findWorkingEndpoint(): String {
         for (endpoint in warpEndpoints) {
             try {
@@ -254,8 +241,7 @@ class WgcfManager {
         }
         return "162.159.195.1"
     }
-
-    // Test if an endpoint is reachable
+    
     suspend fun testEndpoint(endpoint: String, timeout: Int = 3000): Boolean = withContext(Dispatchers.IO) {
         try {
             val address = InetAddress.getByName(endpoint)
@@ -264,7 +250,6 @@ class WgcfManager {
             return@withContext false
         }
     }
-
-    // Get all available endpoints
+    
     fun getAllEndpoints(): List<String> = warpEndpoints
 }
