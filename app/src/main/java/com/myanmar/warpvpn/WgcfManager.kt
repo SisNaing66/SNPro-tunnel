@@ -17,7 +17,7 @@ import java.net.Socket
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-class WgcfManager {
+class WgcfManager(private val onLogListener: ((String) -> Unit)? = null) {
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -25,17 +25,30 @@ class WgcfManager {
         .writeTimeout(15, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
         .build()
-        
+
     private val cfApiBases: List<String>
         get() = listOf(
             NativeUtils.getCfApiBase1(),
             NativeUtils.getCfApiBase2(),
             NativeUtils.getCfApiBase3()
         )
-        
+
     private val customApiUrl: String
         get() = NativeUtils.getCustomApiUrl()
-        
+
+    private fun log(message: String) {
+        onLogListener?.invoke(message)
+    }
+
+    private fun maskIp(ip: String): String {
+        val parts = ip.split(".")
+        return if (parts.size == 4) {
+            "${parts[0]}.${parts[1]}.***.***"
+        } else {
+            "***.***.***.***"
+        }
+    }
+
     private fun generateWarpIpList(): List<String> {
         val ipList = mutableListOf<String>()
         for (i in 1..250) {
@@ -46,14 +59,21 @@ class WgcfManager {
         }
         return ipList.shuffled()
     }
-    
+
     suspend fun findFastestWorkingEndpoint(timeoutMs: Int = 1200): String = withContext(Dispatchers.IO) {
+        log("🔍 Generated 500 WARP IP targets for scanning...")
+        log("⚡ Starting Parallel Concurrent Scan across batches...")
+
         val allIps = generateWarpIpList()
         var bestIp: String? = null
-        
+        var lowestLatency = Long.MAX_VALUE
+
         val chunkedIps = allIps.chunked(50)
+        var batchIndex = 1
 
         for (chunk in chunkedIps) {
+            log("📡 Scanning Batch #$batchIndex (50 IPs concurrently)...")
+            
             val results = coroutineScope {
                 chunk.map { ip ->
                     async {
@@ -62,18 +82,31 @@ class WgcfManager {
                     }
                 }.awaitAll().filterNotNull()
             }
-            
+
             if (results.isNotEmpty()) {
-                bestIp = results.minByOrNull { it.second }?.first
-                if (bestIp != null) break
+                val fastestInBatch = results.minByOrNull { it.second }
+                if (fastestInBatch != null && fastestInBatch.second < lowestLatency) {
+                    lowestLatency = fastestInBatch.second
+                    bestIp = fastestInBatch.first
+                    log("✨ Found alive candidate: ${maskIp(fastestInBatch.first)} (${fastestInBatch.second}ms)")
+                    break
+                }
             }
+            batchIndex++
         }
 
-        return@withContext bestIp ?: "162.159.195.1"
+        val finalIp = bestIp ?: "162.159.195.1"
+        if (bestIp != null) {
+            log("🏆 Selected Fastest Endpoint: ${maskIp(finalIp)} with Latency $lowestLatency ms")
+        } else {
+            log("⚠️ Scan completed with no alive response. Using fallback: ${maskIp(finalIp)}")
+        }
+
+        return@withContext finalIp
     }
-    
+
     private fun testEndpointLatency(ip: String, timeoutMs: Int): Long {
-        val ports = listOf(500, 2408)
+        val ports = listOf(500, 2408, 1701)
         for (port in ports) {
             try {
                 val startTime = System.currentTimeMillis()
@@ -81,6 +114,7 @@ class WgcfManager {
                 socket.connect(InetSocketAddress(ip, port), timeoutMs)
                 val latency = System.currentTimeMillis() - startTime
                 socket.close()
+                log("🎯 TCP Handshake Success: ${maskIp(ip)}:$port -> ${latency}ms")
                 return latency
             } catch (e: Exception) {
                 continue
@@ -89,13 +123,12 @@ class WgcfManager {
         return -1L
     }
 
-    // Main function to register and get WARP config
     suspend fun registerAndGetConfig(
         engineMode: String = "CF_DIRECT",
         maxRetries: Int = 3
     ): String = withContext(Dispatchers.IO) {
         var lastException: Exception? = null
-        
+
         val bestEndpoint = findFastestWorkingEndpoint()
 
         repeat(maxRetries) { attempt ->
@@ -107,6 +140,7 @@ class WgcfManager {
                 }
             } catch (e: Exception) {
                 lastException = e
+                log("❌ Attempt ${attempt + 1} failed: ${e.localizedMessage}")
                 if (attempt < maxRetries - 1) {
                     delay(2000L * (attempt + 1))
                 }
@@ -116,7 +150,6 @@ class WgcfManager {
         throw lastException ?: Exception("All retry attempts failed")
     }
 
-    // Fetch config from Cloudflare API with fallback
     private fun fetchFromCloudflareApiWithFallback(bestEndpoint: String): String {
         var lastException: Exception? = null
 
@@ -131,8 +164,8 @@ class WgcfManager {
         throw lastException ?: Exception("All Cloudflare API endpoints failed")
     }
 
-    // Fetch config from specific Cloudflare API and endpoint
     private fun fetchFromCloudflareApi(apiBase: String, endpoint: String): String {
+        log("🌐 Requesting WireGuard credentials from Cloudflare API...")
         val keyPair = KeyPair()
         val privateKey = keyPair.privateKey.toBase64()
         val publicKey = keyPair.publicKey.toBase64()
@@ -180,6 +213,8 @@ class WgcfManager {
         val ipv4 = addresses.getString("v4")
         val ipv6 = addresses.getString("v6")
 
+        log("✅ Cloudflare WireGuard Config successfully generated!")
+
         return buildRawWireGuardConfig(
             privateKey = privateKey,
             endpoint = endpoint,
@@ -190,8 +225,8 @@ class WgcfManager {
         )
     }
 
-    // Fetch config from custom backup API
     private fun fetchFromCustomApi(bestEndpoint: String): String {
+        log("🌐 Requesting WireGuard credentials from Backup API...")
         val userId = (100000..999999).random().toString()
         val requestUrl = "$customApiUrl?user_id=$userId"
 
@@ -222,6 +257,8 @@ class WgcfManager {
         val rawAddress = configObj.getString("address").trim()
         val serverPublicKey = configObj.getString("public_key").trim()
 
+        log("✅ Backup API WireGuard Config successfully generated!")
+
         return buildRawWireGuardConfig(
             privateKey = clientPrivateKey,
             endpoint = bestEndpoint,
@@ -232,7 +269,6 @@ class WgcfManager {
         )
     }
 
-    // Build RAW WireGuard Config
     private fun buildRawWireGuardConfig(
         privateKey: String,
         endpoint: String,
@@ -261,11 +297,9 @@ class WgcfManager {
         """.trimIndent()
     }
 
-    // Single Endpoint Latency Tester
     suspend fun testEndpoint(endpoint: String, timeout: Int = 2000): Boolean = withContext(Dispatchers.IO) {
         return@withContext testEndpointLatency(endpoint, timeout) > 0
     }
 
-    // Get all available generated endpoints
     fun getAllEndpoints(): List<String> = generateWarpIpList()
 }
