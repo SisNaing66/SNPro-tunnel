@@ -73,18 +73,18 @@ jobs:
             fi
             
             if [[ "$file" == *"arm64-v8a"* ]]; then
-              mv "$file" "warptunnel-${VERSION}-arm64-v8a.apk"
+              mv "$file" "warptunnel-v${VERSION}-arm64-v8a.apk"
             elif [[ "$file" == *"armeabi-v7a"* ]]; then
-              mv "$file" "warptunnel-${VERSION}-armeabi-v7a.apk"
+              mv "$file" "warptunnel-v${VERSION}-armeabi-v7a.apk"
             elif [[ "$file" == *"x86_64"* ]] || [[ "$file" == *"x86-64"* ]]; then
-              mv "$file" "warptunnel-${VERSION}-x86_64.apk"
+              mv "$file" "warptunnel-v${VERSION}-x86_64.apk"
             elif [[ "$file" == *"universal"* ]]; then
-              mv "$file" "warptunnel-${VERSION}-universal.apk"
+              mv "$file" "warptunnel-v${VERSION}-universal.apk"
             elif [[ "$file" == *"x86"* ]] && [[ ! "$file" == *"x86_64"* ]]; then
-              mv "$file" "warptunnel-${VERSION}-x86.apk"
+              mv "$file" "warptunnel-v${VERSION}-x86.apk"
             else
               # Default rename
-              mv "$file" "warptunnel-${VERSION}-${file}"
+              mv "$file" "warptunnel-v${VERSION}-${file}"
             fi
           done
           
