@@ -62,6 +62,12 @@ data class ConfigModel(
 
 class MainActivity : AppCompatActivity() {
 
+    private val wgcfManager by lazy {
+        WgcfManager { logMessage ->
+            appendLog(logMessage)
+        }
+    }
+
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var btnMenu: ImageView
     private lateinit var btnConnectCard: MaterialCardView
@@ -763,16 +769,15 @@ class MainActivity : AppCompatActivity() {
                     val engineMode = prefs.getString("WARP_ENGINE", "CF_DIRECT") ?: "CF_DIRECT"
 
                     appendLog("No Config Found. Requesting NEW Config Via Engine: $engineMode...")
-                    val wgcf = WgcfManager()
 
                     try {
-                        configStr = wgcf.registerAndGetConfig(engineMode)
+                        configStr = wgcfManager.registerAndGetConfig(engineMode)
                         appendLog("Config Received Successfully!")
                     } catch (e: Exception) {
                         appendLog("Error: ${e.message}")
                         val fallbackEngine = if (engineMode == "CF_DIRECT") "CUSTOM_API" else "CF_DIRECT"
                         appendLog("Trying Fallback Engine: $fallbackEngine")
-                        configStr = wgcf.registerAndGetConfig(fallbackEngine)
+                        configStr = wgcfManager.registerAndGetConfig(fallbackEngine)
                     }
 
                     val rawEndpoint = extractEndpoint(configStr)
