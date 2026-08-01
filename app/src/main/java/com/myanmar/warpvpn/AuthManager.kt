@@ -11,6 +11,16 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 class AuthManager(private val context: Context) {
+    
+    companion object {
+        init {
+            System.loadLibrary("native-lib")
+        }
+    }
+    
+    private external fun getWorkerApiUrl(): String
+    
+    private val workerApiUrl by lazy { getWorkerApiUrl() }
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
@@ -18,9 +28,7 @@ class AuthManager(private val context: Context) {
         .build()
 
     private val prefs = context.getSharedPreferences("WARP_VPN_PREFS", Context.MODE_PRIVATE)
-    
-    private val workerApiUrl = "https://your-worker-name.subdomain.workers.dev/api/check-license"
-    
+
     suspend fun checkLicenseServer(hwid: String, inputSerialKey: String? = null): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         try {
             val keyToCheck = inputSerialKey ?: prefs.getString("SAVED_SERIAL_KEY", "") ?: ""
