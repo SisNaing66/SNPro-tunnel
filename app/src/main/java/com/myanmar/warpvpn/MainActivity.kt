@@ -121,6 +121,11 @@ class MainActivity : AppCompatActivity() {
     private var connectStartTime: Long = 0
     private var pendingConfigStr: String? = null
 
+    private val authManager by lazy { AuthManager(this) }
+    private lateinit var cardExpireDate: MaterialCardView
+    private lateinit var tvExpireDate: TextView
+    private lateinit var cardActivateKey: MaterialCardView
+
     private val backend by lazy { GoBackend(applicationContext) }
     private val tunnel = WgTunnel { newState ->
         if (newState == com.wireguard.android.backend.Tunnel.State.DOWN) {
@@ -170,6 +175,15 @@ class MainActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Initialize Drawer License Views
+        cardExpireDate = findViewById(R.id.cardExpireDate)
+        tvExpireDate = findViewById(R.id.tvExpireDate)
+        cardActivateKey = findViewById(R.id.cardActivateKey)
+
+        cardActivateKey.setOnClickListener {
+            showActivateLicenseDialog()
+        }
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -247,6 +261,8 @@ class MainActivity : AppCompatActivity() {
             else -> rbDnsDefault.isChecked = true
         }
 
+        checkLicenseOnStartup()
+
         updateLogsAndAdVisibility(switchLogs.isChecked)
 
         updateActiveServerName()
@@ -280,6 +296,83 @@ class MainActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private fun checkLicenseOnStartup() {
+        lifecycleScope.launch {
+            val hwid = getDeviceHwid()
+            val (isValid, message) = authManager.checkLicenseServer(hwid)
+
+            updateExpireDateUI()
+
+            if (!isValid) {
+                showActivateLicenseDialog()
+            }
+        }
+    }
+
+    private fun updateExpireDateUI() {
+        val expireDateMillis = authManager.getSavedExpireDate()
+        if (authManager.isLocalLicenseValid() && expireDateMillis > 0) {
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            val dateStr = sdf.format(Date(expireDateMillis))
+            tvExpireDate.text = dateStr
+            tvExpireDate.setTextColor(Color.parseColor("#4ADE80"))
+        } else {
+            tvExpireDate.text = "Not Activated / Expired"
+            tvExpireDate.setTextColor(Color.parseColor("#F87171"))
+        }
+    }
+
+    private fun showActivateLicenseDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_activate_license, null)
+        val tvDialogHwid = dialogView.findViewById<TextView>(R.id.tvDialogHwid)
+        val btnCopyHwid = dialogView.findViewById<MaterialButton>(R.id.btnCopyHwidDialog)
+        val etLicenseKey = dialogView.findViewById<EditText>(R.id.etLicenseKey)
+        val btnCancel = dialogView.findViewById<MaterialButton>(R.id.btnCancelDialog)
+        val btnActivate = dialogView.findViewById<MaterialButton>(R.id.btnActivateDialog)
+
+        val hwid = getDeviceHwid()
+        tvDialogHwid.text = hwid
+
+        val dialog = AlertDialog.Builder(this, R.style.DarkCustomDialog)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+
+        btnCopyHwid.setOnClickListener {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("HWID", hwid)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "HWID Copied to Clipboard!", Toast.LENGTH_SHORT).show()
+        }
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        btnActivate.setOnClickListener {
+            val inputKey = etLicenseKey.text.toString().trim()
+            if (inputKey.isNotEmpty()) {
+                lifecycleScope.launch {
+                    appendLog("Verifying Serial Key...")
+                    val (success, message) = authManager.checkLicenseServer(hwid, inputKey)
+                    if (success) {
+                        Toast.makeText(this@MainActivity, "🎉 Activated Successfully!", Toast.LENGTH_SHORT).show()
+                        appendLog("✅ License Key Activated!")
+                        updateExpireDateUI()
+                        dialog.dismiss()
+                    } else {
+                        Toast.makeText(this@MainActivity, "❌ $message", Toast.LENGTH_LONG).show()
+                        appendLog("❌ Activation Error: $message")
+                    }
+                }
+            } else {
+                Toast.makeText(this, "Please enter a valid Serial Key", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        dialog.show()
     }
 
     private fun showHelpDialog() {
@@ -846,6 +939,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun prepareAndConnectVpn() {
+        tvStatus.text = "VERIFYING LICENSE..."
+        btnConnectCard.setStrokeColor(Color.parseColor("#F59E0B"))
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val hwid = getDeviceHwid()
+            val (isValid, message) = authManager.checkLicenseServer(hwid)
+
+            withContext(Dispatchers.Main) {
+                updateExpireDateUI()
+
+                if (!isValid) {
+                    Toast.makeText(this@MainActivity, "❌ Connection Denied: $message", Toast.LENGTH_LONG).show()
+                    appendLog("❌ License Check Failed: $message")
+                    resetUi()
+                    showActivateLicenseDialog()
+                    return@withContext
+                }
+                
+                appendLog("✅ License Active. Proceeding with VPN Connection...")
+                startActualVpnConnection()
+            }
+        }
+    }
+
+    private fun startActualVpnConnection {
         tvStatus.text = "CONNECTING..."
         btnConnectCard.setStrokeColor(Color.parseColor("#F59E0B"))
         appendLog("Preparing VPN Connection...")
