@@ -34,9 +34,10 @@ Java_com_myanmar_warpvpn_NativeUtils_getCfApiBase3(
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_myanmar_warpvpn_AuthManager_getWorkerApiUrl(
+Java_com_myanmar_warpvpn_AuthManager_getNativeWorkerApiUrl(
         JNIEnv* env,
         jobject /* this */) {
+    
     std::string apiUrl = "https://your-worker-name.subdomain.workers.dev/api/check-license";
     
     return env->NewStringUTF(apiUrl.c_str());
