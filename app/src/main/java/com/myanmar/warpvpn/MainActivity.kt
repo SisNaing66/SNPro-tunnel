@@ -644,7 +644,7 @@ class MainActivity : AppCompatActivity() {
             rbDnsDefault.isChecked = true
             setEngineSelectionUI(true)
 
-            updateLogsAndAdVisibility(false)
+            updateLogsAndAdVisibility(true)
             updateActiveServerName()
             appendLog("Restored all settings and configs to default.")
             Toast.makeText(this, "All settings restored to defaults!", Toast.LENGTH_SHORT).show()
