@@ -11,16 +11,16 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
 class AuthManager(private val context: Context) {
-    
+
     companion object {
         init {
             System.loadLibrary("native-lib")
         }
     }
     
-    private external fun getWorkerApiUrl(): String
+    private external fun getNativeWorkerApiUrl(): String
     
-    private val workerApiUrl by lazy { getWorkerApiUrl() }
+    private val workerApiUrl by lazy { getNativeWorkerApiUrl() }
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
