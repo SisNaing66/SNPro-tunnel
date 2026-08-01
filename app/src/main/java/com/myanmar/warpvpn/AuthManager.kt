@@ -18,15 +18,18 @@ class AuthManager(private val context: Context) {
         .build()
 
     private val prefs = context.getSharedPreferences("WARP_VPN_PREFS", Context.MODE_PRIVATE)
+    
+    private val workerApiUrl = "https://your-worker-name.subdomain.workers.dev/api/check-license"
 
-    // Cloudflare Worker API URL
-    private val workerApiUrl = "https://your-worker-subdomain.workers.dev/api/verify-license"
-
-    suspend fun verifyLicense(serialKey: String, hwid: String): Pair<Boolean, String> = withContext(Dispatchers.IO) {
+    suspend fun checkLicenseServer(hwid: String, inputSerialKey: String? = null): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         try {
+            val keyToCheck = inputSerialKey ?: prefs.getString("SAVED_SERIAL_KEY", "") ?: ""
+
             val jsonBody = JSONObject().apply {
-                put("serial_key", serialKey)
                 put("hwid", hwid)
+                if (keyToCheck.isNotEmpty()) {
+                    put("serial_key", keyToCheck)
+                }
             }
 
             val request = Request.Builder()
@@ -35,20 +38,23 @@ class AuthManager(private val context: Context) {
                 .build()
 
             val response = client.newCall(request).execute()
-            val responseData = response.body?.string() ?: return@withContext Pair(false, "Empty Response")
+            val responseData = response.body?.string() ?: return@withContext Pair(false, "Server Response Empty")
 
             val jsonResult = JSONObject(responseData)
             val success = jsonResult.optBoolean("success", false)
-            val message = jsonResult.optString("message", "Verification Failed")
+            val message = jsonResult.optString("message", "License Verification Failed")
 
             if (success) {
-                val expireDate = jsonResult.optLong("expire_date", 0)
-                
+                val serialKey = jsonResult.optString("serial_key")
+                val expireDate = jsonResult.optLong("expire_date")
+
                 prefs.edit()
-                    .putString("SERIAL_KEY", serialKey)
-                    .putLong("EXPIRE_DATE", expireDate)
-                    .putBoolean("IS_LOGGED_IN", true)
+                    .putString("SAVED_SERIAL_KEY", serialKey)
+                    .putLong("SAVED_EXPIRE_DATE", expireDate)
+                    .putBoolean("IS_ACTIVATED", true)
                     .apply()
+            } else {
+                prefs.edit().putBoolean("IS_ACTIVATED", false).apply()
             }
 
             return@withContext Pair(success, message)
@@ -57,22 +63,11 @@ class AuthManager(private val context: Context) {
         }
     }
 
-    fun isUserLoggedIn(): Boolean {
-        val isLoggedIn = prefs.getBoolean("IS_LOGGED_IN", false)
-        val expireDate = prefs.getLong("EXPIRE_DATE", 0)
-        
-        if (System.currentTimeMillis() > expireDate) {
-            logout()
-            return false
-        }
-        return isLoggedIn
+    fun isLocalLicenseValid(): Boolean {
+        val isActivated = prefs.getBoolean("IS_ACTIVATED", false)
+        val expireDate = prefs.getLong("SAVED_EXPIRE_DATE", 0L)
+        return isActivated && System.currentTimeMillis() < expireDate
     }
 
-    fun logout() {
-        prefs.edit()
-            .remove("SERIAL_KEY")
-            .remove("EXPIRE_DATE")
-            .putBoolean("IS_LOGGED_IN", false)
-            .apply()
-    }
+    fun getSavedSerialKey(): String = prefs.getString("SAVED_SERIAL_KEY", "") ?: ""
 }
