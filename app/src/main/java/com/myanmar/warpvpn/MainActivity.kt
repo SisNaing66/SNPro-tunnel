@@ -126,7 +126,7 @@ class MainActivity : AppCompatActivity() {
         if (newState == com.wireguard.android.backend.Tunnel.State.DOWN) {
             runOnUiThread {
                 if (isConnected) {
-                    appendLog("⚠️ VPN Session Revoked by System (Another VPN connected).")
+                  //  appendLog("⚠️ VPN Session Revoked by System (Another VPN connected).")
                   //  Toast.makeText(this, "Disconnected: Another VPN was activated", Toast.LENGTH_LONG).show()
                     resetUi()
                 }
@@ -286,19 +286,19 @@ class MainActivity : AppCompatActivity() {
         val helpMessage = """
             Welcome to WARP Tunnel!
             
-            🔹 Tap To Connect: Click the main power button to establish a secure Warp connection.
+            [1] Tap To Connect: Click the main power button to establish a secure Warp connection.
             
-            🔹 Engine Options:
-            • Cloudflare Direct API: Connects directly through Cloudflare infrastructure.
-            • Custom Backup API: Backup option if direct API is blocked.
+            [2] Engine Options:
+            [3] Cloudflare Direct API: Connects directly through Cloudflare infrastructure.
+            [4] Custom Backup API: Backup option if direct API is blocked.
             
-            🔹 Auto Clean IP:
+            [5] Auto Clean IP:
             The app automatically scans 500+ Cloudflare IP endpoints in real-time to assign you the lowest latency & best performing IP for your ISP.
             
-            🔹 Split Tunneling:
+            [6] Split Tunneling:
             Exclude specific apps from using the VPN connection under the menu settings.
             
-            🔹 Ping Monitor:
+            [7] Ping Monitor:
             Live ping updates for Cloudflare and Facebook servers to verify actual connectivity.
         """.trimIndent()
 
@@ -545,7 +545,7 @@ class MainActivity : AppCompatActivity() {
             prefs.edit().clear().apply()
 
             switchDarkMode.isChecked = true
-            switchLogs.isChecked = false
+            switchLogs.isChecked = true
             switchPing.isChecked = false
             switchSplitTunnel.isChecked = false
             rbDnsDefault.isChecked = true
