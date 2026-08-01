@@ -20,7 +20,7 @@ class AuthManager(private val context: Context) {
     private val prefs = context.getSharedPreferences("WARP_VPN_PREFS", Context.MODE_PRIVATE)
     
     private val workerApiUrl = "https://your-worker-name.subdomain.workers.dev/api/check-license"
-
+    
     suspend fun checkLicenseServer(hwid: String, inputSerialKey: String? = null): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         try {
             val keyToCheck = inputSerialKey ?: prefs.getString("SAVED_SERIAL_KEY", "") ?: ""
@@ -38,15 +38,15 @@ class AuthManager(private val context: Context) {
                 .build()
 
             val response = client.newCall(request).execute()
-            val responseData = response.body?.string() ?: return@withContext Pair(false, "Server Response Empty")
+            val responseData = response.body?.string() ?: return@withContext Pair(false, "Empty Server Response")
 
             val jsonResult = JSONObject(responseData)
             val success = jsonResult.optBoolean("success", false)
-            val message = jsonResult.optString("message", "License Verification Failed")
+            val message = jsonResult.optString("message", "Verification Failed")
 
             if (success) {
-                val serialKey = jsonResult.optString("serial_key")
-                val expireDate = jsonResult.optLong("expire_date")
+                val serialKey = jsonResult.optString("serial_key", keyToCheck)
+                val expireDate = jsonResult.optLong("expire_date", 0L)
 
                 prefs.edit()
                     .putString("SAVED_SERIAL_KEY", serialKey)
@@ -54,11 +54,20 @@ class AuthManager(private val context: Context) {
                     .putBoolean("IS_ACTIVATED", true)
                     .apply()
             } else {
-                prefs.edit().putBoolean("IS_ACTIVATED", false).apply()
+                if (jsonResult.optBoolean("is_expired", false) || inputSerialKey != null) {
+                    prefs.edit()
+                        .putBoolean("IS_ACTIVATED", false)
+                        .putLong("SAVED_EXPIRE_DATE", 0L)
+                        .apply()
+                }
             }
 
             return@withContext Pair(success, message)
         } catch (e: Exception) {
+            val isLocalValid = isLocalLicenseValid()
+            if (isLocalValid) {
+                return@withContext Pair(true, "Offline License Active")
+            }
             return@withContext Pair(false, "Network Error: ${e.localizedMessage}")
         }
     }
@@ -69,5 +78,19 @@ class AuthManager(private val context: Context) {
         return isActivated && System.currentTimeMillis() < expireDate
     }
 
-    fun getSavedSerialKey(): String = prefs.getString("SAVED_SERIAL_KEY", "") ?: ""
+    fun getSavedSerialKey(): String {
+        return prefs.getString("SAVED_SERIAL_KEY", "NOT_ACTIVATED") ?: "NOT_ACTIVATED"
+    }
+
+    fun getSavedExpireDate(): Long {
+        return prefs.getLong("SAVED_EXPIRE_DATE", 0L)
+    }
+
+    fun clearLicenseData() {
+        prefs.edit()
+            .remove("SAVED_SERIAL_KEY")
+            .remove("SAVED_EXPIRE_DATE")
+            .putBoolean("IS_ACTIVATED", false)
+            .apply()
+    }
 }
