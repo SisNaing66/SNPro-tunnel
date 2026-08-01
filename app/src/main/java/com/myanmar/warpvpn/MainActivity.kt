@@ -12,6 +12,8 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
@@ -20,8 +22,6 @@ import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
-import android.view.Menu
-import android.view.MenuItem
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
@@ -124,15 +124,12 @@ class MainActivity : AppCompatActivity() {
     private val authManager by lazy { AuthManager(this) }
     private lateinit var cardExpireDate: MaterialCardView
     private lateinit var tvExpireDate: TextView
-    private lateinit var cardActivateKey: MaterialCardView
 
     private val backend by lazy { GoBackend(applicationContext) }
     private val tunnel = WgTunnel { newState ->
         if (newState == com.wireguard.android.backend.Tunnel.State.DOWN) {
             runOnUiThread {
                 if (isConnected) {
-                  //  appendLog("⚠️ VPN Session Revoked by System (Another VPN connected).")
-                  //  Toast.makeText(this, "Disconnected: Another VPN was activated", Toast.LENGTH_LONG).show()
                     resetUi()
                 }
             }
@@ -179,9 +176,8 @@ class MainActivity : AppCompatActivity() {
         // Initialize Drawer License Views
         cardExpireDate = findViewById(R.id.cardExpireDate)
         tvExpireDate = findViewById(R.id.tvExpireDate)
-        cardActivateKey = findViewById(R.id.cardActivateKey)
 
-        cardActivateKey.setOnClickListener {
+        cardExpireDate.setOnClickListener {
             showActivateLicenseDialog()
         }
 
@@ -241,7 +237,7 @@ class MainActivity : AppCompatActivity() {
         tvFbPing = findViewById(R.id.tvFbPing)
         imgCfDot = findViewById(R.id.imgCfDot)
         imgFbDot = findViewById(R.id.imgFbDot)
-        
+
         switchDarkMode.isChecked = isDark
         switchLogs.isChecked = prefs.getBoolean("SHOW_LOGS", true)
         switchPing.isChecked = prefs.getBoolean("AUTO_PING", false)
@@ -655,7 +651,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         dialog.show()
-        
+
         val displayMetrics = resources.displayMetrics
         val width = (displayMetrics.widthPixels * 0.85).toInt()
         dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -684,7 +680,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         dialog.show()
-        
+
         val displayMetrics = resources.displayMetrics
         val width = (displayMetrics.widthPixels * 0.90).toInt()
         dialog.window?.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -716,7 +712,7 @@ class MainActivity : AppCompatActivity() {
             tvServerName.text = "Warp Auto Clean IP"
         }
     }
-    
+
     private fun maskEndpoint(endpoint: String): String {
         return try {
             val parts = endpoint.split(":")
@@ -956,14 +952,14 @@ class MainActivity : AppCompatActivity() {
                     showActivateLicenseDialog()
                     return@withContext
                 }
-                
+
                 appendLog("✅ License Active. Proceeding with VPN Connection...")
                 startActualVpnConnection()
             }
         }
     }
 
-    private fun startActualVpnConnection {
+    private fun startActualVpnConnection() {
         tvStatus.text = "CONNECTING..."
         btnConnectCard.setStrokeColor(Color.parseColor("#F59E0B"))
         appendLog("Preparing VPN Connection...")
@@ -1143,7 +1139,7 @@ class MainActivity : AppCompatActivity() {
             tvActiveSinceTime.text = "Not Connected"
         }
     }
-    
+
     private fun formatElapsedTime(seconds: Long): String {
         val hours = seconds / 3600
         val minutes = (seconds % 3600) / 60
@@ -1248,7 +1244,7 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     tvCfPing.text = "N/A"
                     tvFbPing.text = "N/A"
-                    
+
                     imgCfDot.setColorFilter(Color.parseColor("#64748B"))
                     imgFbDot.setColorFilter(Color.parseColor("#64748B"))
                     animateDot(imgCfDot, false)
@@ -1402,7 +1398,7 @@ class MainActivity : AppCompatActivity() {
 
     class WgTunnel(private val onStateChangedListener: ((com.wireguard.android.backend.Tunnel.State) -> Unit)? = null) : com.wireguard.android.backend.Tunnel {
         override fun getName(): String = "WARPTunnel"
-        
+
         override fun onStateChange(newState: com.wireguard.android.backend.Tunnel.State) {
             onStateChangedListener?.invoke(newState)
         }
