@@ -32,3 +32,12 @@ Java_com_myanmar_warpvpn_NativeUtils_getCfApiBase3(
     std::string cfApi3 = "https://api.cloudflareclient.com/v0a2409051800";
     return env->NewStringUTF(cfApi3.c_str());
 }
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_myanmar_warpvpn_AuthManager_getWorkerApiUrl(
+        JNIEnv* env,
+        jobject /* this */) {
+    std::string apiUrl = "https://your-worker-name.subdomain.workers.dev/api/check-license";
+    
+    return env->NewStringUTF(apiUrl.c_str());
+}
