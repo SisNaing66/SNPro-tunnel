@@ -296,13 +296,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkLicenseOnStartup() {
         lifecycleScope.launch {
-            val hwid = getDeviceHwid()
-            val (isValid, message) = authManager.checkLicenseServer(hwid)
-
-            updateExpireDateUI()
-
-            if (!isValid) {
-                showActivateLicenseDialog()
+            try {
+                val hwid = getDeviceHwid()
+                val (isValid, message) = authManager.checkLicenseServer(hwid)
+                
+                updateExpireDateUI()
+                if (!isValid && !isFinishing && !isDestroyed) {
+                    showActivateLicenseDialog()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                appendLog("License Startup Error: ${e.message}")
             }
         }
     }
