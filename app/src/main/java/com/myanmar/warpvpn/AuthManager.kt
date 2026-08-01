@@ -1,6 +1,7 @@
 package com.myanmar.warpvpn
 
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -14,13 +15,25 @@ class AuthManager(private val context: Context) {
 
     companion object {
         init {
-            System.loadLibrary("native-lib")
+            try {
+                System.loadLibrary("native-lib")
+            } catch (e: Throwable) {
+                Log.e("AuthManager", "Failed to load native library: ${e.message}")
+            }
         }
     }
-    
+
     private external fun getNativeWorkerApiUrl(): String
     
-    private val workerApiUrl by lazy { getNativeWorkerApiUrl() }
+    private val workerApiUrl: String
+        get() {
+            return try {
+                getNativeWorkerApiUrl()
+            } catch (e: Throwable) {
+                Log.e("AuthManager", "Native URL Call Error: ${e.message}")
+                "https://invalid-worker-url.local/api/check-license"
+            }
+        }
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
@@ -31,6 +44,19 @@ class AuthManager(private val context: Context) {
 
     suspend fun checkLicenseServer(hwid: String, inputSerialKey: String? = null): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         try {
+            if (workerApiUrl.contains("your-worker-name") || 
+                workerApiUrl.contains("subdomain.workers.dev") || 
+                workerApiUrl.contains("invalid-worker-url") ||
+                !workerApiUrl.startsWith("http")) {
+
+                Log.w("AuthManager", "Worker API URL is not properly configured yet.")
+                
+                if (isLocalLicenseValid()) {
+                    return@withContext Pair(true, "Offline License Active")
+                }
+                return@withContext Pair(false, "Worker API URL Not Configured Yet!")
+            }
+
             val keyToCheck = inputSerialKey ?: prefs.getString("SAVED_SERIAL_KEY", "") ?: ""
 
             val jsonBody = JSONObject().apply {
@@ -39,11 +65,19 @@ class AuthManager(private val context: Context) {
                     put("serial_key", keyToCheck)
                 }
             }
-
-            val request = Request.Builder()
-                .url(workerApiUrl)
-                .post(jsonBody.toString().toRequestBody("application/json".toMediaType()))
-                .build()
+            
+            val request = try {
+                Request.Builder()
+                    .url(workerApiUrl)
+                    .post(jsonBody.toString().toRequestBody("application/json".toMediaType()))
+                    .build()
+            } catch (e: IllegalArgumentException) {
+                Log.e("AuthManager", "Invalid URL Format: ${e.message}")
+                if (isLocalLicenseValid()) {
+                    return@withContext Pair(true, "Offline License Active")
+                }
+                return@withContext Pair(false, "Invalid API URL Format!")
+            }
 
             val response = client.newCall(request).execute()
             val responseData = response.body?.string() ?: return@withContext Pair(false, "Empty Server Response")
@@ -71,12 +105,16 @@ class AuthManager(private val context: Context) {
             }
 
             return@withContext Pair(success, message)
-        } catch (e: Exception) {
+
+        } catch (e: Throwable) {
+            
+            Log.e("AuthManager", "Exception in checkLicenseServer: ${e.message}", e)
+
             val isLocalValid = isLocalLicenseValid()
             if (isLocalValid) {
                 return@withContext Pair(true, "Offline License Active")
             }
-            return@withContext Pair(false, "Network Error: ${e.localizedMessage}")
+            return@withContext Pair(false, "License Check Error: ${e.localizedMessage ?: "Unknown Error"}")
         }
     }
 
