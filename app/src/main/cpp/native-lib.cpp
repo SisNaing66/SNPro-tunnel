@@ -38,7 +38,7 @@ Java_com_myanmar_warpvpn_AuthManager_getNativeWorkerApiUrl(
         JNIEnv* env,
         jobject /* this */) {
     
-    std::string apiUrl = "https://your-worker-name.subdomain.workers.dev/api/check-license";
+    std::string apiUrl = "https://warp-tunnel-bot.pages.dev/api/check-license";
     
     return env->NewStringUTF(apiUrl.c_str());
 }
