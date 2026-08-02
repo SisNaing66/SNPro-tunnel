@@ -44,19 +44,14 @@ class AuthManager(private val context: Context) {
 
     suspend fun checkLicenseServer(hwid: String, inputSerialKey: String? = null): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         try {
-            if (workerApiUrl.contains("your-worker-name") || 
-                workerApiUrl.contains("subdomain.workers.dev") || 
-                workerApiUrl.contains("invalid-worker-url") ||
-                !workerApiUrl.startsWith("http")) {
-
+            if (workerApiUrl.isEmpty() || !workerApiUrl.startsWith("http")) {
                 Log.w("AuthManager", "Worker API URL is not properly configured yet.")
-                
                 if (isLocalLicenseValid()) {
                     return@withContext Pair(true, "Offline License Active")
                 }
                 return@withContext Pair(false, "Worker API URL Not Configured Yet!")
             }
-
+            
             val keyToCheck = inputSerialKey ?: prefs.getString("SAVED_SERIAL_KEY", "") ?: ""
 
             val jsonBody = JSONObject().apply {
