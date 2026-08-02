@@ -120,6 +120,7 @@ class MainActivity : AppCompatActivity() {
     private var timerJob: Job? = null
     private var connectStartTime: Long = 0
     private var pendingConfigStr: String? = null
+    private var expireTimerJob: Job? = null
 
     private val authManager by lazy { AuthManager(this) }
     private lateinit var cardExpireDate: MaterialCardView
@@ -312,15 +313,43 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateExpireDateUI() {
-        val expireDateMillis = authManager.getSavedExpireDate()
-        if (authManager.isLocalLicenseValid() && expireDateMillis > 0) {
-            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
-            val dateStr = sdf.format(Date(expireDateMillis))
-            tvExpireDate.text = dateStr
-            tvExpireDate.setTextColor(Color.parseColor("#4ADE80"))
+        expireTimerJob?.cancel()
+        if (authManager.isLocalLicenseValid()) {
+            val expireDateMillis = authManager.getSavedExpireDate()
+            startExpireCountdown(expireDateMillis)
         } else {
             tvExpireDate.text = "Not Activated / Expired"
             tvExpireDate.setTextColor(Color.parseColor("#F87171"))
+        }
+    }
+
+    private fun startExpireCountdown(expireDateMillis: Long) {
+        expireTimerJob = lifecycleScope.launch(Dispatchers.Main) {
+            while (isActive) {
+                val currentTime = System.currentTimeMillis()
+                val diff = expireDateMillis - currentTime
+                
+                if (diff > 0) {
+                    val days = diff / (1000 * 60 * 60 * 24)
+                    val hours = (diff / (1000 * 60 * 60)) % 24
+                    val minutes = (diff / (1000 * 60)) % 60
+                    val seconds = (diff / 1000) % 60
+                    val countdownText = if (days > 0) {
+                        String.format(Locale.getDefault(), "%dd %02dh %02dm %02ds left", days, hours, minutes, seconds)
+                    } else {
+                        String.format(Locale.getDefault(), "%02dh %02dm %02ds left", hours, minutes, seconds)
+                    }
+                    
+                    tvExpireDate.text = countdownText
+                    tvExpireDate.setTextColor(Color.parseColor("#4ADE80"))
+                } else {
+                    tvExpireDate.text = "License Expired"
+                    tvExpireDate.setTextColor(Color.parseColor("#F87171"))
+                    authManager.clearLicenseData()
+                    break
+                }
+                delay(1000)
+            }
         }
     }
 
@@ -1281,6 +1310,13 @@ class MainActivity : AppCompatActivity() {
 
             notificationHelper.cancelNotification()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        expireTimerJob?.cancel()
+        stopPingManager()
+        stopActiveSinceTimer()
     }
 
     // ==================== Config Management ====================
