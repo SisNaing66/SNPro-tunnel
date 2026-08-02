@@ -16,7 +16,7 @@ class AuthManager(private val context: Context) {
     companion object {
         init {
             try {
-                System.loadLibrary("native-lib")
+                System.loadLibrary("warpvpn")
             } catch (e: Throwable) {
                 Log.e("AuthManager", "Failed to load native library: ${e.message}")
             }
@@ -24,14 +24,14 @@ class AuthManager(private val context: Context) {
     }
 
     private external fun getNativeWorkerApiUrl(): String
-    
+
     private val workerApiUrl: String
         get() {
             return try {
                 getNativeWorkerApiUrl()
             } catch (e: Throwable) {
                 Log.e("AuthManager", "Native URL Call Error: ${e.message}")
-                "https://invalid-worker-url.local/api/check-license"
+                "https://invalid-api-url.local/api/check-license"
             }
         }
 
@@ -45,13 +45,13 @@ class AuthManager(private val context: Context) {
     suspend fun checkLicenseServer(hwid: String, inputSerialKey: String? = null): Pair<Boolean, String> = withContext(Dispatchers.IO) {
         try {
             if (workerApiUrl.isEmpty() || !workerApiUrl.startsWith("http")) {
-                Log.w("AuthManager", "Worker API URL is not properly configured yet.")
+                Log.w("AuthManager", "API URL is not properly configured yet.")
                 if (isLocalLicenseValid()) {
                     return@withContext Pair(true, "Offline License Active")
                 }
-                return@withContext Pair(false, "Worker API URL Not Configured Yet!")
+                return@withContext Pair(false, "API URL Not Configured Yet!")
             }
-            
+
             val keyToCheck = inputSerialKey ?: prefs.getString("SAVED_SERIAL_KEY", "") ?: ""
 
             val jsonBody = JSONObject().apply {
@@ -60,7 +60,7 @@ class AuthManager(private val context: Context) {
                     put("serial_key", keyToCheck)
                 }
             }
-            
+
             val request = try {
                 Request.Builder()
                     .url(workerApiUrl)
@@ -102,7 +102,6 @@ class AuthManager(private val context: Context) {
             return@withContext Pair(success, message)
 
         } catch (e: Throwable) {
-            
             Log.e("AuthManager", "Exception in checkLicenseServer: ${e.message}", e)
 
             val isLocalValid = isLocalLicenseValid()
