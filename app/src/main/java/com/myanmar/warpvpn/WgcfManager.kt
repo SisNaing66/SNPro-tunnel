@@ -213,7 +213,7 @@ class WgcfManager(private val onLogListener: ((String) -> Unit)? = null) {
         val ipv4 = addresses.getString("v4")
         val ipv6 = addresses.getString("v6")
 
-        log("✅ Cloudflare WireGuard Config successfully generated!")
+        log("✅ SN Tulip Vpn Config successfully generated!")
 
         return buildRawWireGuardConfig(
             privateKey = privateKey,
@@ -257,7 +257,7 @@ class WgcfManager(private val onLogListener: ((String) -> Unit)? = null) {
         val rawAddress = configObj.getString("address").trim()
         val serverPublicKey = configObj.getString("public_key").trim()
 
-        log("✅ Backup API WireGuard Config successfully generated!")
+        log("✅ Backup API SN Tulip Vpn Config successfully generated!")
 
         return buildRawWireGuardConfig(
             privateKey = clientPrivateKey,
