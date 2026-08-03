@@ -38,7 +38,7 @@ Java_com_myanmar_warpvpn_AuthManager_getNativeWorkerApiUrl(
         JNIEnv* env,
         jobject /* this */) {
     
-    std::string apiUrl = "https://api.vipplus69.com/api/check-license";
+    std::string apiUrl = "https://api.tulipvip69.com/api/check-license";
     
     return env->NewStringUTF(apiUrl.c_str());
 }
