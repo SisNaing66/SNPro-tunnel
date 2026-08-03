@@ -22,7 +22,7 @@
     <string name="device_hwid">Device Hardware ID</string>
 
     <!-- Dialogs -->
-    <string name="exit_title">Exit WARP TUNNEL?</string>
+    <string name="exit_title">Exit SN Tulip Vpn?</string>
     <string name="exit_message">Choose whether to minimize to background or exit the app completely.</string>
     <string name="restore_title">Restore Defaults</string>
     <string name="restore_message">Are you sure you want to reset all settings, configs, and preferences to default?</string>
