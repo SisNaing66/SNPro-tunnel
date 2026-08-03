@@ -28,7 +28,7 @@ class NotificationHelper(private val context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "WARP TUNNEL Connection Status",
+                "SN Tulip Vpn Connection Status",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
                 description = "Shows active VPN status and real-time ping"
@@ -49,7 +49,7 @@ class NotificationHelper(private val context: Context) {
         )
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setContentTitle("WARP TUNNEL")
+            .setContentTitle("SN Tulip Vpn")
             .setContentText("Active & Protected | $pingStatus")
             .setSmallIcon(R.drawable.ic_launcher)
             .setOngoing(true)
