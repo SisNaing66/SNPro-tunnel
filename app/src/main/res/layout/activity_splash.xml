@@ -30,7 +30,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
             android:letterSpacing="0.15"
-            android:text="WARP TUNNEL"
+            android:text="SN Tulip Vpn"
             android:textColor="?attr/colorOnBackground"
             android:textSize="24sp"
             android:textStyle="bold" />
