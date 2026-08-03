@@ -742,7 +742,7 @@ class MainActivity : AppCompatActivity() {
         if (selected != null) {
             tvServerName.text = selected.name
         } else {
-            tvServerName.text = "Warp Auto Clean IP"
+            tvServerName.text = "SN Tulip Vpn Auto Clean IP"
         }
     }
 
