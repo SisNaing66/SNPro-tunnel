@@ -520,8 +520,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Ads Click Listeners
-        cardAdBanner.setOnClickListener { openTelegramNkka() }
-        btnGetAd.setOnClickListener { openTelegramNkka() }
+        cardAdBanner.setOnClickListener { openTelegramSN() }
+        btnGetAd.setOnClickListener { openTelegramSN() }
 
         btnTestPing.setOnClickListener {
             if (isConnected) {
@@ -1444,3 +1444,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
