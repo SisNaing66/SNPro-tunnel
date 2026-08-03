@@ -38,7 +38,7 @@
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
                 android:letterSpacing="0.2"
-                android:text="WARP TUNNEL"
+                android:text="SN Tulip Vpn"
                 android:textColor="?attr/colorOnBackground"
                 android:textSize="20sp"
                 android:textStyle="bold" />
@@ -134,7 +134,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
                     android:layout_weight="1"
-                    android:text="WARP Auto Clean IP [162.159.***.*]"
+                    android:text="SN Tulip Vpn Auto Clean IP [162.159.***.*]"
                     android:textColor="?attr/colorOnBackground"
                     android:textSize="14sp"
                     android:textStyle="bold" />
