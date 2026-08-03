@@ -150,7 +150,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="WARP Generator Engine"
+                    android:text="SN Tulip Vpn Generator Engine"
                     android:textColor="#38BDF8"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -159,7 +159,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Select method to generate WARP WireGuard config"
+                    android:text="Select method to generate SN Tulip Vpn config"
                     android:textColor="#94A3B8"
                     android:textSize="11sp" />
 
@@ -201,7 +201,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Cloudflare Direct API"
+                                android:text="SN Tulip Vpn Direct API"
                                 android:textColor="?attr/colorOnBackground"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -255,7 +255,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Custom Backup API"
+                                android:text="Custom Backup SN Tulip Vpn API"
                                 android:textColor="?attr/colorOnBackground"
                                 android:textSize="14sp"
                                 android:textStyle="bold" />
@@ -539,7 +539,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="404 \\ 2.0 &lt;/🇲🇲&gt;"
+                    android:text="💥Sis Naing💥"
                     android:textColor="?attr/colorOnBackground"
                     android:textSize="14sp"
                     android:textStyle="bold" />
@@ -558,7 +558,7 @@
                     android:layout_height="wrap_content"
                     android:clickable="true"
                     android:focusable="true"
-                    android:text="https://t.me/premium_channel_404"
+                    android:text="https://t.me/noresult6999"
                     android:textColor="#38BDF8"
                     android:textSize="13sp"
                     android:textStyle="bold" />
