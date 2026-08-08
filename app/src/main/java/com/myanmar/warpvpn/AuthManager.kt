@@ -35,9 +35,10 @@ class AuthManager(private val context: Context) {
             }
         }
 
+    // ⏱️ ပြင်ဆင်ချက် - ဆာဗာက အဖြေပြန်လာတာကို သေချာစောင့်နိုင်ဖို့ ၃ စက္ကန့်အစား ၈ စက္ကန့်ကို ပြောင်းထားပါတယ်
     private val client = OkHttpClient.Builder()
-        .connectTimeout(3, TimeUnit.SECONDS)
-        .readTimeout(3, TimeUnit.SECONDS)
+        .connectTimeout(8, TimeUnit.SECONDS)
+        .readTimeout(8, TimeUnit.SECONDS)
         .build()
 
     private val prefs = context.getSharedPreferences("WARP_VPN_PREFS", Context.MODE_PRIVATE)
@@ -91,12 +92,8 @@ class AuthManager(private val context: Context) {
                     .putBoolean("IS_ACTIVATED", true)
                     .apply()
             } else {
-                if (jsonResult.optBoolean("is_expired", false) || inputSerialKey != null) {
-                    prefs.edit()
-                        .putBoolean("IS_ACTIVATED", false)
-                        .putLong("SAVED_EXPIRE_DATE", 0L)
-                        .apply()
-                }
+                // 🛑 ပြင်ဆင်ချက် - Bot ကနေ လိုင်စင်ဖျက်လိုက်လို့ success: false ဖြစ်တာနဲ့ ဖုန်းထဲက လိုင်စင်ကိုပါ အမြစ်ပြတ် ဖျက်ပစ်ပါမယ်
+                clearLicenseData()
             }
 
             return@withContext Pair(success, message)
@@ -134,3 +131,4 @@ class AuthManager(private val context: Context) {
             .apply()
     }
 }
+
