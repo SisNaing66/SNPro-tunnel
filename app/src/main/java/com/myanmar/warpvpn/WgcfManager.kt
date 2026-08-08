@@ -49,22 +49,30 @@ class WgcfManager(private val onLogListener: ((String) -> Unit)? = null) {
         }
     }
 
+    // 🔹 အစ်ကိုပေးထားတဲ့ IP Range အသစ်တွေ အကုန်ထည့်ပြီး Generate လုပ်မယ့်အပိုင်း
     private fun generateWarpIpList(): List<String> {
         val ipList = mutableListOf<String>()
-        for (i in 1..250) {
-            ipList.add("162.159.192.$i")
+        val prefixes = listOf(
+            "188.114.96.", "188.114.97.", "188.114.98.", "188.114.99.",
+            "162.159.192.", "162.159.193.", "162.159.195.", 
+            "8.34.146.", "8.39.214.", "8.39.204.", "8.6.112.", 
+            "8.35.211.", "8.39.125.", "8.47.69."
+        )
+        
+        for (prefix in prefixes) {
+            for (i in 1..250) {
+                ipList.add("$prefix$i")
+            }
         }
-        for (i in 1..250) {
-            ipList.add("162.159.195.$i")
-        }
+        // Random ဖြစ်အောင် Shuffle လုပ်ပေးလိုက်ပါတယ်
         return ipList.shuffled()
     }
 
     suspend fun findFastestWorkingEndpoint(timeoutMs: Int = 1200): String = withContext(Dispatchers.IO) {
-        log("🔍 Generated 500 WARP IP targets for scanning...")
+        val allIps = generateWarpIpList()
+        log("🔍 Generated ${allIps.size} WARP IP targets for scanning...")
         log("⚡ Starting Parallel Concurrent Scan across batches...")
 
-        val allIps = generateWarpIpList()
         var bestIp: String? = null
         var lowestLatency = Long.MAX_VALUE
 
@@ -105,18 +113,23 @@ class WgcfManager(private val onLogListener: ((String) -> Unit)? = null) {
         return@withContext finalIp
     }
 
+    // 🔹 Ping စစ်တဲ့အပိုင်းကို ပိုမြန်အောင်နဲ့ Memory Leak မဖြစ်အောင် `.use {}` သုံးပြီး ပြင်ပေးထားပါတယ်
     private fun testEndpointLatency(ip: String, timeoutMs: Int): Long {
         val ports = listOf(500, 2408, 1701)
         for (port in ports) {
             try {
                 val startTime = System.currentTimeMillis()
-                val socket = Socket()
-                socket.connect(InetSocketAddress(ip, port), timeoutMs)
+                // .use block က Socket ကို ပြီးတာနဲ့ အလိုအလျောက် ပိတ် (Close) ပေးသွားပါမယ်
+                Socket().use { socket ->
+                    socket.tcpNoDelay = true // Ping စစ်တာ ပိုမြန်စေဖို့ Nagle's algorithm ကို ပိတ်ထားပါတယ်
+                    socket.soTimeout = timeoutMs
+                    socket.connect(InetSocketAddress(ip, port), timeoutMs)
+                }
                 val latency = System.currentTimeMillis() - startTime
-                socket.close()
                 log("🎯 TCP Handshake Success: ${maskIp(ip)}:$port -> ${latency}ms")
                 return latency
             } catch (e: Exception) {
+                // Connection Fail ရင် နောက်တစ်ပေါက် (Port) ကို ဆက်စစ်မယ်
                 continue
             }
         }
@@ -303,3 +316,4 @@ class WgcfManager(private val onLogListener: ((String) -> Unit)? = null) {
 
     fun getAllEndpoints(): List<String> = generateWarpIpList()
 }
+
